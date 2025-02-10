@@ -3,6 +3,7 @@ package com.example.ratecontent
 import android.app.appsearch.SearchResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
@@ -35,11 +37,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.compose.currentBackStackEntryAsState
@@ -100,6 +104,7 @@ fun SearchBar() {
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 10.dp, vertical = 20.dp)
+                .shadow(5.dp, shape = RoundedCornerShape(50.dp))
                 .clip(shape = RoundedCornerShape(50.dp))
                 .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(50.dp))
         )
@@ -109,43 +114,88 @@ fun SearchBar() {
 
 @Composable
 fun LazyCardView(items: List<String>) {
-    LazyColumn(
+    var expandedItem by remember { mutableStateOf<String?>(null) }
+    val sortedItems = if (expandedItem != null) {
+        listOf(expandedItem!!) + items.filter { it != expandedItem }
+    } else items
+
+    Column(
         modifier = Modifier
             .fillMaxSize()
             .offset(y = 110.dp)
     ) {
-        items(items) { item ->
-            Box(
-                modifier = Modifier
-                    .padding(vertical = 8.dp)
-                    .fillParentMaxWidth()
-                    .height(100.dp)
-                    .clip(shape = RoundedCornerShape(10.dp))
-                    .background(color = colorResource(R.color.side_color))
-                    .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
-            ) {
-                Text(
-                    text = item,
-                    color = Color.Black,
-                    modifier = Modifier
-                        .align(alignment = Alignment.CenterStart)
-                        .padding(start = 30.dp)
-                )
+
+        sortedItems.forEach { item ->
+            Column {
                 Box(
                     modifier = Modifier
-                        .align(alignment = Alignment.CenterStart)
-                        .offset(x = 80.dp),
+                        .padding(vertical = 8.dp)
+                        .fillMaxWidth()
+                        .height(100.dp)
+                        .shadow(10.dp, shape = RoundedCornerShape(10.dp))
+                        .clip(shape = RoundedCornerShape(10.dp))
+                        .background(color = colorResource(R.color.side_color))
+                        .border(
+                            width = 1.dp,
+                            color = Color.Black,
+                            shape = RoundedCornerShape(10.dp)
+                        )
+
+                        .clickable {
+                            if (expandedItem == null) {
+                                expandedItem = item
+                            } else expandedItem = null
+                        },
                 ) {
-                    for (i in 0..4) Box(
+                    Text(
+                        text = item,
+                        color = Color.Black,
                         modifier = Modifier
-                            .offset(x = (i * 55).dp)
-                            .clip(shape = SlantedColumnShape())
-                            .border(width = 1.dp, color = Color.Gray, shape = SlantedColumnShape())
-                            .background(color = Color.Cyan)
-                            .fillMaxHeight()
-                            .width(110.dp)
+                            .align(alignment = Alignment.CenterStart)
+                            .padding(start = 30.dp)
+                    )
+                    Box(
+                        modifier = Modifier
+                            .align(alignment = Alignment.CenterStart)
+                            .offset(x = 80.dp),
                     ) {
-                        Text(text = "Test")
+                        for (i in 0..4) Box(
+                            modifier = Modifier
+                                .offset(x = (i * 55).dp)
+                                .clip(shape = SlantedColumnShape())
+                                .border(
+                                    width = 1.dp,
+                                    color = Color.Gray,
+                                    shape = SlantedColumnShape()
+                                )
+                                .background(color = colorResource(R.color.main_color))
+                                .fillMaxHeight()
+                                .width(110.dp)
+                        ) {
+                            Text(text = "Test")
+                        }
+                    }
+                }
+                if (expandedItem == item) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .navigationBarsPadding()
+                            .fillMaxHeight()
+                            .background(color = colorResource(R.color.side_color))
+                            .clip(shape = RoundedCornerShape(10.dp))
+                            .border(
+                                width = 1.dp,
+                                color = Color.Black,
+                                shape = RoundedCornerShape(10.dp)
+                            )
+                            .padding(16.dp)
+                    ) {
+                        Text(
+                            text = "Детальная информация о: $item",
+                            color = Color.Black,
+                            fontSize = 20.sp
+                        )
                     }
                 }
             }

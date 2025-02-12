@@ -42,10 +42,13 @@ android {
 }
 
 dependencies {
-
+    implementation(libs.androidx.room.runtime)
+    kapt(libs.androidx.room.compiler)
     implementation(libs.coil.compose)
     implementation(libs.androidx.hilt.navigation.compose)
     implementation(libs.hilt.android)
+    implementation(libs.androidx.room.common)
+    implementation(libs.androidx.room.ktx)
     kapt(libs.dagger.hilt.compiler)
     implementation (libs.moshi)
     implementation (libs.moshi.kotlin)

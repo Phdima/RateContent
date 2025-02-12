@@ -20,6 +20,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material.icons.outlined.Star
 import androidx.compose.material3.Icon
@@ -28,7 +29,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,6 +58,7 @@ fun SearchResultScreen() {
     ) {
         LazyColumn {
             items(searchResults.sortedByDescending { movie -> movie.voteAverage }) { movie ->
+                var isFavorite by remember(movie.id) { mutableStateOf(false) }
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -101,13 +105,18 @@ fun SearchResultScreen() {
                             modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
                         )
                         Icon(
-                            imageVector = Icons.Outlined.FavoriteBorder,
+                            imageVector = if (!isFavorite) Icons.Outlined.FavoriteBorder else Icons.Filled.Favorite,
                             contentDescription = "добавление в избранное",
                             tint = Color.Gray,
                             modifier = Modifier
                                 .size(50.dp)
                                 .padding(5.dp)
-                                .clickable {  }
+                                .clickable {
+                                    isFavorite = !isFavorite
+                                    if (isFavorite) {
+                                        viewModel.addToFavorites(movie)
+                                    }
+                                }
                         )
                     }
                 }

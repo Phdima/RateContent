@@ -102,12 +102,14 @@ fun SearchResultScreen() {
                     {
                         Text(
                             text = String.format("%.1f", movie.voteAverage),
+                            fontWeight = FontWeight.Bold,
                             modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
                         )
                         Icon(
                             imageVector = if (!isFavorite) Icons.Outlined.FavoriteBorder else Icons.Filled.Favorite,
                             contentDescription = "добавление в избранное",
-                            tint = Color.Gray,
+
+                            tint = Color.Red,
                             modifier = Modifier
                                 .size(50.dp)
                                 .padding(5.dp)

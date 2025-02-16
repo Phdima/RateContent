@@ -137,11 +137,16 @@ fun SearchBar() {
 
 
 @Composable
-fun LazyCardView(items: List<String>) {
+fun LazyCardView(items: List<String>, viewModel: MovieViewModel = hiltViewModel()) {
+    val favoriteMovies by viewModel.favoriteMovies.observeAsState(emptyList())
     var expandedItem by remember { mutableStateOf<String?>(null) }
     val sortedItems = if (expandedItem != null) {
         listOf(expandedItem!!) + items.filter { it != expandedItem }
     } else items
+
+    val categoryMap = mapOf(
+        "Movies" to favoriteMovies.sortedByDescending { it.voteAverage },
+    )
 
     Column(
         modifier = Modifier
@@ -176,25 +181,32 @@ fun LazyCardView(items: List<String>) {
                             .align(alignment = Alignment.CenterStart)
                             .padding(start = 30.dp)
                     )
+                    val sortedMovies = categoryMap[item] ?: emptyList()
                     Box(
                         modifier = Modifier
                             .align(alignment = Alignment.CenterStart)
                             .offset(x = 80.dp),
                     ) {
-                        for (i in 0..4) Box(
-                            modifier = Modifier
-                                .offset(x = (i * 55).dp)
-                                .clip(shape = SlantedColumnShape())
-                                .border(
-                                    width = 1.dp,
-                                    color = Color.Gray,
-                                    shape = SlantedColumnShape()
-                                )
-                                .background(color = colorResource(R.color.main_color))
-                                .fillMaxHeight()
-                                .width(110.dp)
-                        ) {
-                            Text(text = "Test")
+                        for (i in 0..4) {
+                            val movie = sortedMovies.getOrNull(i)
+                            Image(
+                                painter = rememberAsyncImagePainter(
+                                    model = MovieAPIConstants.IMAGE_BASE_URL + movie?.posterPath,
+                                ),
+                                contentDescription = "top 5 image",
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .offset(x = (i * 55).dp)
+                                    .clip(shape = SlantedColumnShape())
+                                    .border(
+                                        width = 1.dp,
+                                        color = Color.Gray,
+                                        shape = SlantedColumnShape()
+                                    )
+                                    .background(color = colorResource(R.color.main_color))
+                                    .fillMaxHeight()
+                                    .width(110.dp)
+                            )
                         }
                     }
                 }
@@ -210,7 +222,9 @@ fun LazyCardView(items: List<String>) {
                                 shape = RoundedCornerShape(10.dp)
                             )
                     ) {
-                        FavoritesScreen()
+                        when (item) {
+                            "Movies" -> FavoritesMovieScreen()
+                        }
                     }
                 }
             }
@@ -219,7 +233,7 @@ fun LazyCardView(items: List<String>) {
 }
 
 @Composable
-fun FavoritesScreen(viewModel: MovieViewModel = hiltViewModel()) {
+fun FavoritesMovieScreen(viewModel: MovieViewModel = hiltViewModel()) {
     val favoriteMovies by viewModel.favoriteMovies.observeAsState(emptyList())
 
     Box(

@@ -1,7 +1,10 @@
-package com.example.ratecontent
+package com.example.ratecontent.di
 
 import android.content.Context
 import androidx.room.Room
+import com.example.ratecontent.data.local.db.AppDatabase
+import com.example.ratecontent.data.local.db.FavoriteMovieDao
+import com.example.ratecontent.data.local.repository.MovieRepository
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -16,11 +19,9 @@ object DatabaseModule {
     @Provides
     @Singleton
     fun provideDatabase(@ApplicationContext context: Context): AppDatabase {
-        return Room.databaseBuilder(
-            context,
-            AppDatabase::class.java,
-            "app_database"
-        ).build()
+        return Room.databaseBuilder(context, AppDatabase::class.java, "app_database")
+            .fallbackToDestructiveMigration()
+            .build()
     }
 
     @Provides

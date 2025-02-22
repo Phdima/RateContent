@@ -1,4 +1,4 @@
-package com.example.ratecontent
+package com.example.ratecontent.data.api
 
 import com.squareup.moshi.Json
 import retrofit2.Call
@@ -6,10 +6,7 @@ import retrofit2.http.GET
 import retrofit2.http.Query
 
 data class SearchMovieResponse(
-    @Json(name = "page") val page: Int,
     @Json(name = "results") val results: List<Movie>,
-    @Json(name = "total_pages") val totalPages: Int,
-    @Json(name = "total_results") val totalResults: Int
 )
 
 data class Movie(
@@ -22,10 +19,10 @@ data class Movie(
 
 interface TMDbApiService {
     @GET("search/movie")
-    fun searchMovie(
+    suspend fun searchMovie(
         @Query("query") query: String,
         @Query("language") language: String = "ru-RU",
-    ): Call<SearchMovieResponse>
+    ): SearchMovieResponse
 }
 
 

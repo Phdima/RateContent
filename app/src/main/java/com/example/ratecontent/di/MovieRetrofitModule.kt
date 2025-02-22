@@ -1,5 +1,7 @@
-package com.example.ratecontent
+package com.example.ratecontent.di
 
+import com.example.ratecontent.utils.MovieAPIConstants
+import com.example.ratecontent.data.api.TMDbApiService
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import dagger.Module
@@ -15,7 +17,7 @@ import javax.inject.Singleton
 
 @Module
 @InstallIn(SingletonComponent::class)
-object RetrofitInstance {
+object MovieRetrofitModule {
 
     val authInterceptor = Interceptor { chain ->
         val original: Request = chain.request()
@@ -33,9 +35,10 @@ object RetrofitInstance {
         .add(KotlinJsonAdapterFactory())
         .build()
 
+    @MovieRetrofit
     @Singleton
     @Provides
-    fun provideRetrofit(): Retrofit {
+    fun provideMovieRetrofit(): Retrofit {
         return Retrofit.Builder()
             .baseUrl(MovieAPIConstants.BASE_URL)
             .client(client)
@@ -45,7 +48,7 @@ object RetrofitInstance {
 
     @Singleton
     @Provides
-    fun provideApiService(retrofit: Retrofit): TMDbApiService {
+    fun provideMovieApiService(@MovieRetrofit retrofit: Retrofit): TMDbApiService {
         return retrofit.create(TMDbApiService::class.java)
     }
 }

@@ -1,16 +1,13 @@
-package com.example.ratecontent
+package com.example.ratecontent.ui.screens
 
-import android.app.appsearch.SearchResult
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -29,10 +26,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
-import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.FavoriteBorder
-import androidx.compose.material3.Button
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
@@ -56,11 +50,12 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation.compose.currentBackStackEntryAsState
 import coil.compose.rememberAsyncImagePainter
+import com.example.ratecontent.LocalNavController
+import com.example.ratecontent.R
+import com.example.ratecontent.ui.viewmodel.UnifiedViewModel
+import com.example.ratecontent.utils.MovieAPIConstants
 
 
 @Composable
@@ -84,7 +79,7 @@ fun MainScreen() {
         )
 
         SearchBar()
-        LazyCardView(items = cardList)
+        LazyCardView()
     }
 }
 
@@ -94,7 +89,7 @@ fun SearchBar() {
     val navController = LocalNavController.current
     var searchText by remember { mutableStateOf("") }
     val parentEntry = remember { navController.getBackStackEntry("main_graph") }
-    val viewModel: MovieViewModel = hiltViewModel(parentEntry)
+    val viewModel: UnifiedViewModel = hiltViewModel(parentEntry)
     Column(modifier = Modifier.fillMaxSize()) {
         TextField(
             value = searchText,
@@ -106,13 +101,13 @@ fun SearchBar() {
             ),
             keyboardActions = KeyboardActions(
                 onSearch = {
-                    viewModel.searchForMovie(searchText)
+                    viewModel.search(searchText)
                     navController.navigate("SearchResultScreen")
                 }
             ),
             trailingIcon = {
                 IconButton(onClick = {
-                    viewModel.searchForMovie(searchText)
+                    viewModel.search(searchText)
                     navController.navigate("SearchResultScreen")
                 }) {
                     Icon(
@@ -137,12 +132,13 @@ fun SearchBar() {
 
 
 @Composable
-fun LazyCardView(items: List<String>, viewModel: MovieViewModel = hiltViewModel()) {
+fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
+    val cardList = listOf("Anime", "Movies", "Games", "Books")
     val favoriteMovies by viewModel.favoriteMovies.observeAsState(emptyList())
     var expandedItem by remember { mutableStateOf<String?>(null) }
     val sortedItems = if (expandedItem != null) {
-        listOf(expandedItem!!) + items.filter { it != expandedItem }
-    } else items
+        listOf(expandedItem!!) + cardList.filter { it != expandedItem }
+    } else cardList
 
     val categoryMap = mapOf(
         "Movies" to favoriteMovies.sortedByDescending { it.voteAverage },
@@ -233,7 +229,7 @@ fun LazyCardView(items: List<String>, viewModel: MovieViewModel = hiltViewModel(
 }
 
 @Composable
-fun FavoritesMovieScreen(viewModel: MovieViewModel = hiltViewModel()) {
+fun FavoritesMovieScreen(viewModel: UnifiedViewModel = hiltViewModel()) {
     val favoriteMovies by viewModel.favoriteMovies.observeAsState(emptyList())
 
     Box(
@@ -307,7 +303,6 @@ fun FavoritesMovieScreen(viewModel: MovieViewModel = hiltViewModel()) {
 }
 
 
-val cardList = listOf("Anime", "Movies", "Games", "Books")
 
 class SlantedColumnShape : Shape {
     override fun createOutline(

@@ -12,7 +12,7 @@ import androidx.sqlite.db.SupportSQLiteDatabase
 import com.example.ratecontent.data.local.utility.Converters
 
 
-@Database(entities = [FavoriteMovie::class, FavoriteBook::class], version = 2)
+@Database(entities = [FavoriteMovie::class, FavoriteBook::class], version = 5)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun favoriteMovieDao(): FavoriteMovieDao

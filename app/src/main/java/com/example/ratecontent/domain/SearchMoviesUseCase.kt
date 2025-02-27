@@ -11,6 +11,7 @@ class SearchMoviesUseCase @Inject constructor(
     suspend fun searchMovies(query: String): List<Movie> {
         return try {
             val response = tmdbApiService.searchMovie(query = query)
+            Log.d("SearchMoviesUseCase", "Searching movies for query: $query")
             if (response.results.isNotEmpty()) {
                 response.results
             } else {

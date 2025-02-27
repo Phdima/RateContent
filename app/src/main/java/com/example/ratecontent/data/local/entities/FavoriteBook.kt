@@ -6,10 +6,10 @@ import com.example.ratecontent.data.api.ImageLinks
 
 @Entity(tableName = "favorite_books")
 data class FavoriteBook(
-    @PrimaryKey val id: Int,
+    @PrimaryKey val id: String,
     val title: String?,
-    val authors: List<String>?,
     val description: String?,
     val averageRating: Double?,
-    val imageLinks: ImageLinks?
+    val imageLinks: ImageLinks?,
+    val userRating: Double? = null
 )

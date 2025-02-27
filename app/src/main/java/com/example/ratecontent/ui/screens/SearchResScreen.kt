@@ -1,6 +1,5 @@
 package com.example.ratecontent.ui.screens
 
-import android.util.Log
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -9,6 +8,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -16,15 +16,17 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.outlined.FavoriteBorder
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Icon
+import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
@@ -45,6 +47,9 @@ import com.example.ratecontent.LocalNavController
 import com.example.ratecontent.R
 import com.example.ratecontent.data.api.BookItem
 import com.example.ratecontent.data.api.Movie
+import com.example.ratecontent.data.local.entities.FavoriteBook
+import com.example.ratecontent.data.local.entities.FavoriteItem
+import com.example.ratecontent.data.local.entities.FavoriteMovie
 import com.example.ratecontent.ui.viewmodel.UnifiedViewModel
 import com.example.ratecontent.utils.MovieAPIConstants
 
@@ -72,11 +77,12 @@ fun SearchResultScreen() {
                     add(UnifiedSearchResult.MovieItems(it))
                 }
             }
-            if (bookSearchResults.isNotEmpty()){
+            if (bookSearchResults.isNotEmpty()) {
                 add(UnifiedSearchResult.SectionHeader("Books"))
-                bookSearchResults.sortedByDescending { it.volumeInfo.averageRating ?: 0.0 }.forEach{
-                    add(UnifiedSearchResult.BookItems(it))
-                }
+                bookSearchResults.sortedByDescending { it.volumeInfo.averageRating ?: 0.0 }
+                    .forEach {
+                        add(UnifiedSearchResult.BookItems(it))
+                    }
             }
         }
     }
@@ -103,6 +109,7 @@ fun SearchResultScreen() {
                             )
                         }
                     }
+
                     is UnifiedSearchResult.MovieItems -> {
                         item {
                             SearchItemRow(
@@ -110,8 +117,19 @@ fun SearchResultScreen() {
                                 overview = result.movie.overview,
                                 imageUrl = MovieAPIConstants.IMAGE_BASE_URL + result.movie.posterPath,
                                 rating = result.movie.voteAverage,
-                                //isFavorite = ,
-                                onFavoriteClick = { viewModel.addToFavorites(result.movie) }
+                                onFavoriteClick = { userRating ->
+                                    viewModel.addToFavorites(
+                                        FavoriteItem.MovieFavorite(
+                                            FavoriteMovie(
+                                                id = result.movie.id,
+                                                title = result.movie.title,
+                                                posterPath = result.movie.posterPath ?: "",
+                                                overview = result.movie.overview,
+                                                voteAverage = result.movie.voteAverage
+                                            )
+                                        ), userRating = userRating
+                                    )
+                                }
                             )
                         }
                     }
@@ -123,8 +141,19 @@ fun SearchResultScreen() {
                                 overview = result.book.volumeInfo.description ?: "Нет описания",
                                 imageUrl = result.book.volumeInfo.imageLinks?.thumbnail,
                                 rating = result.book.volumeInfo.averageRating ?: 0.0,
-                                //isFavorite = /* Если нужна логика для избранного книг */,
-                                onFavoriteClick = { /* Добавьте соответствующий обработчик */ }
+                                onFavoriteClick = { userRating ->
+                                    viewModel.addToFavorites(
+                                        FavoriteItem.BookFavorite(
+                                            FavoriteBook(
+                                                id = result.book.id,
+                                                title = result.book.volumeInfo.title,
+                                                description = result.book.volumeInfo.description,
+                                                averageRating = result.book.volumeInfo.averageRating,
+                                                imageLinks = result.book.volumeInfo.imageLinks
+                                            )
+                                        ), userRating = userRating
+                                    )
+                                }
                             )
                         }
                     }
@@ -141,9 +170,23 @@ fun SearchItemRow(
     overview: String,
     imageUrl: String?,
     rating: Double,
-    //isFavorite: Boolean,
-    onFavoriteClick: () -> Unit
+    onFavoriteClick: (userRating: Double) -> Unit
 ) {
+
+    var isFavorite by remember(title) { mutableStateOf(false) }
+    var showRatingDialog by remember { mutableStateOf(false) }
+
+    if (showRatingDialog) {
+        RatingDialog(
+            onRatingSelected = { selectedRating ->
+                showRatingDialog = false
+                isFavorite = true
+                onFavoriteClick(selectedRating)
+            },
+            onDismiss = { showRatingDialog = false }
+        )
+    }
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -177,22 +220,60 @@ fun SearchItemRow(
             }
         }
         Column {
-            Text(
-                text = String.format("%.1f", rating),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
+            if (rating != 0.0) {
+                Text(
+                    text = String.format("%.1f", rating),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
+                )
+            } else Spacer(modifier = Modifier.height(24.dp))
+            Icon(
+                imageVector = if (!isFavorite) Icons.Outlined.FavoriteBorder else Icons.Filled.Favorite,
+                contentDescription = "Toggle Favorite",
+                tint = Color.Red,
+                modifier = Modifier
+                    .size(50.dp)
+                    .padding(5.dp)
+                    .clickable {
+                        showRatingDialog = true
+                    }
             )
-//            Icon(
-//                imageVector = if (!isFavorite) Icons.Outlined.FavoriteBorder else Icons.Filled.Favorite,
-//                contentDescription = "Toggle Favorite",
-//                tint = Color.Red,
-//                modifier = Modifier
-//                    .size(50.dp)
-//                    .padding(5.dp)
-//                    .clickable { onFavoriteClick() }
-//            )
         }
     }
+}
+@Composable
+fun RatingDialog(
+    initialRating: Float = 5f,
+    onRatingSelected: (Double) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var sliderValue by remember { mutableStateOf(initialRating) }
+
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text("Оцените по 10-бальной шкале") },
+        text = {
+            Column {
+                Text("Оценка: ${sliderValue.toInt()}")
+                Slider(
+                    value = sliderValue,
+                    onValueChange = { sliderValue = it },
+                    valueRange = 0f..10f,
+                    steps = 9
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(onClick = { onRatingSelected(sliderValue.toDouble()) }) {
+                Text("ОК")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Отмена")
+            }
+        }
+    )
 }
 
 

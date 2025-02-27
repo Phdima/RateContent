@@ -3,7 +3,9 @@ package com.example.ratecontent.di
 import android.content.Context
 import androidx.room.Room
 import com.example.ratecontent.data.local.db.AppDatabase
+import com.example.ratecontent.data.local.db.FavoriteBookDao
 import com.example.ratecontent.data.local.db.FavoriteMovieDao
+import com.example.ratecontent.data.local.repository.BookRepository
 import com.example.ratecontent.data.local.repository.MovieRepository
 import dagger.Module
 import dagger.Provides
@@ -30,8 +32,19 @@ object DatabaseModule {
     }
 
     @Provides
+    fun provideFavoriteBookDao(database: AppDatabase) : FavoriteBookDao {
+        return database.favoriteBookDao()
+    }
+
+    @Provides
     @Singleton
     fun provideMovieRepository(dao: FavoriteMovieDao): MovieRepository {
         return MovieRepository(dao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideBookRepository(dao: FavoriteBookDao) : BookRepository {
+        return BookRepository(dao)
     }
 }

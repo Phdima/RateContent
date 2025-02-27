@@ -17,5 +17,5 @@ interface FavoriteBookDao{
     fun getAllFavorites(): Flow<List<FavoriteBook>>
 
     @Query("DELETE FROM favorite_books WHERE id = :bookItemId ")
-    suspend fun delete(bookItemId: Int)
+    suspend fun delete(bookItemId: String)
 }

@@ -8,11 +8,11 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -54,6 +54,9 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import coil.compose.rememberAsyncImagePainter
 import com.example.ratecontent.LocalNavController
 import com.example.ratecontent.R
+import com.example.ratecontent.data.local.entities.FavoriteBook
+import com.example.ratecontent.data.local.entities.FavoriteItem
+import com.example.ratecontent.data.local.entities.FavoriteMovie
 import com.example.ratecontent.ui.viewmodel.UnifiedViewModel
 import com.example.ratecontent.utils.MovieAPIConstants
 
@@ -135,13 +138,15 @@ fun SearchBar() {
 fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
     val cardList = listOf("Anime", "Movies", "Games", "Books")
     val favoriteMovies by viewModel.favoriteMovies.observeAsState(emptyList())
+    val favoriteBooks by viewModel.favoriteBooks.observeAsState(emptyList())
     var expandedItem by remember { mutableStateOf<String?>(null) }
     val sortedItems = if (expandedItem != null) {
         listOf(expandedItem!!) + cardList.filter { it != expandedItem }
     } else cardList
 
-    val categoryMap = mapOf(
+    val categoryMap: Map<String, List<Any>> = mapOf(
         "Movies" to favoriteMovies.sortedByDescending { it.voteAverage },
+        "Books" to favoriteBooks.sortedByDescending { it.averageRating }
     )
 
     Column(
@@ -177,17 +182,34 @@ fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
                             .align(alignment = Alignment.CenterStart)
                             .padding(start = 30.dp)
                     )
-                    val sortedMovies = categoryMap[item] ?: emptyList()
+
                     Box(
                         modifier = Modifier
                             .align(alignment = Alignment.CenterStart)
                             .offset(x = 80.dp),
                     ) {
+                        val sortedMovies = categoryMap[item] ?: emptyList()
+
                         for (i in 0..4) {
-                            val movie = sortedMovies.getOrNull(i)
+                            val element = sortedMovies.getOrNull(i)
+                            val imageUrl = when (item) {
+                                "Movies" -> {
+                                    if (element is FavoriteMovie)
+                                        MovieAPIConstants.IMAGE_BASE_URL + element.posterPath
+                                    else ""
+                                }
+
+                                "Books" -> {
+                                    if (element is FavoriteBook)
+                                        element.imageLinks?.thumbnail ?: ""
+                                    else ""
+                                }
+
+                                else -> ""
+                            }
                             Image(
                                 painter = rememberAsyncImagePainter(
-                                    model = MovieAPIConstants.IMAGE_BASE_URL + movie?.posterPath,
+                                    model = imageUrl,
                                 ),
                                 contentDescription = "top 5 image",
                                 contentScale = ContentScale.Crop,
@@ -219,7 +241,23 @@ fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
                             )
                     ) {
                         when (item) {
-                            "Movies" -> FavoritesMovieScreen()
+                            "Movies" -> {
+                                val favorites =
+                                    favoriteMovies.map { FavoriteItem.MovieFavorite(it) }
+                                FavoritesScreen(
+                                    favoriteItems = favorites,
+                                    onDeleteClick = { viewModel.removeFromFavorites(it) }
+                                )
+                            }
+
+                            "Books" -> {
+                                val favorites =
+                                    favoriteBooks.map { FavoriteItem.BookFavorite(it) }
+                                FavoritesScreen(
+                                    favoriteItems = favorites,
+                                    onDeleteClick = { viewModel.removeFromFavorites(it) }
+                                )
+                            }
                         }
                     }
                 }
@@ -229,71 +267,36 @@ fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
 }
 
 @Composable
-fun FavoritesMovieScreen(viewModel: UnifiedViewModel = hiltViewModel()) {
-    val favoriteMovies by viewModel.favoriteMovies.observeAsState(emptyList())
-
-    Box(
+fun FavoritesScreen(
+    favoriteItems: List<FavoriteItem>,
+    onDeleteClick: (FavoriteItem) -> Unit
+) {
+    Column(
         modifier = Modifier
             .fillMaxSize()
     ) {
         LazyColumn(
-            modifier = Modifier.navigationBarsPadding(),
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(bottom = 125.dp)
         ) {
-
-            items(favoriteMovies.sortedByDescending { it.voteAverage }) { movie ->
-                var isFavorite by remember(movie.id) { mutableStateOf(true) }
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(140.dp)
-                        .padding(8.dp)
-                        .border(width = 1.dp, color = Color.Black, shape = RoundedCornerShape(5.dp))
-                        .background(colorResource(R.color.side_color))
-                ) {
-                    Image(
-                        painter = rememberAsyncImagePainter(MovieAPIConstants.IMAGE_BASE_URL + movie.posterPath),
-                        contentDescription = "Movie Poster",
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier
-                            .height(140.dp)
-                            .width(100.dp)
-                            .clip(RoundedCornerShape(5.dp))
-                    )
-                    Column(
-                        modifier = Modifier.weight(1f)
-                    ) {
-                        Text(
-                            text = movie.title,
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(5.dp)
+            items(favoriteItems.sortedByDescending { sortItem ->
+                when (sortItem) {
+                    is FavoriteItem.MovieFavorite -> sortItem.movieFavorite.userRating
+                    is FavoriteItem.BookFavorite -> sortItem.bookItem.userRating
+                }
+            }) { item ->
+                when (item) {
+                    is FavoriteItem.MovieFavorite -> {
+                        MovieFavoriteRow(
+                            movie = item.movieFavorite,
+                            onDeleteClick = { onDeleteClick(item) }
                         )
-                        Box(
-                            modifier = Modifier
-                                .padding(5.dp)
-                                .height(80.dp)
-                                .verticalScroll(rememberScrollState())
-                        ) {
-                            Text(text = movie.overview)
-                        }
                     }
-                    Column {
-                        Text(
-                            text = String.format("%.1f", movie.voteAverage),
-                            fontWeight = FontWeight.Bold,
-                            modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
-                        )
-                        Icon(
-                            imageVector = Icons.Default.Delete,
-                            contentDescription = "Удалить из избранного",
-                            tint = Color.Red,
-                            modifier = Modifier
-                                .size(50.dp)
-                                .offset(y = 50.dp)
-                                .padding(8.dp)
-                                .clickable {
-                                    viewModel.removeFromFavorites(movie)
-                                }
+
+                    is FavoriteItem.BookFavorite -> {
+                        BookFavoriteRow(
+                            book = item.bookItem,
+                            onDeleteClick = { onDeleteClick(item) }
                         )
                     }
                 }
@@ -302,6 +305,129 @@ fun FavoritesMovieScreen(viewModel: UnifiedViewModel = hiltViewModel()) {
     }
 }
 
+@Composable
+fun MovieFavoriteRow(movie: FavoriteMovie, onDeleteClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .height(160.dp)
+            .padding(8.dp)
+            .border(1.dp, Color.Black, RoundedCornerShape(5.dp))
+            .background(colorResource(R.color.side_color))
+            .padding(8.dp)
+    ) {
+        Image(
+            painter = rememberAsyncImagePainter(MovieAPIConstants.IMAGE_BASE_URL + movie.posterPath),
+            contentDescription = "Movie Poster",
+            contentScale = ContentScale.Crop,
+            modifier = Modifier
+                .height(140.dp)
+                .width(100.dp)
+                .clip(RoundedCornerShape(5.dp))
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = movie.title, fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(text = movie.overview)
+            }
+        }
+        Column {
+            Row {
+                Text(
+                    text = String.format("%.0f", movie.userRating),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
+                )
+                Text(
+                    text = "(" + String.format("%.1f", movie.voteAverage) + ")",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
+                )
+            }
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Удалить",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .size(50.dp)
+                        .padding(5.dp)
+                        .clickable { onDeleteClick() }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun BookFavoriteRow(book: FavoriteBook, onDeleteClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .padding(8.dp)
+            .border(1.dp, Color.Black, RoundedCornerShape(5.dp))
+            .background(colorResource(R.color.side_color))
+            .padding(8.dp)
+    ) {
+        book.imageLinks?.thumbnail?.let { imageUrl ->
+            Image(
+                painter = rememberAsyncImagePainter(imageUrl),
+                contentDescription = "Book Thumbnail",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .height(140.dp)
+                    .width(100.dp)
+                    .clip(RoundedCornerShape(5.dp))
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = book.title ?: "Нет названия", fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = book.description ?: "Нет описания",
+                )
+            }
+        }
+        Column {
+            Text(
+                text = String.format("%.0f", book.userRating),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Удалить",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { onDeleteClick() }
+                )
+            }
+        }
+
+    }
+}
 
 
 class SlantedColumnShape : Shape {

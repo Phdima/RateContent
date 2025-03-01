@@ -9,3 +9,7 @@ annotation class MovieRetrofit
 @Qualifier
 @Retention(AnnotationRetention.BINARY)
 annotation class BookRetrofit
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class GameRetrofit

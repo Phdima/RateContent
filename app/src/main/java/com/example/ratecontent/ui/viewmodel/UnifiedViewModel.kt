@@ -9,12 +9,14 @@ import androidx.lifecycle.viewModelScope
 import com.example.ratecontent.domain.SearchBooksUseCase
 import com.example.ratecontent.domain.SearchMoviesUseCase
 import com.example.ratecontent.data.api.BookItem
+import com.example.ratecontent.data.api.GameAPI
 import com.example.ratecontent.data.api.Movie
 import com.example.ratecontent.data.local.entities.FavoriteBook
 import com.example.ratecontent.data.local.entities.FavoriteMovie
 import com.example.ratecontent.data.local.repository.BookRepository
 import com.example.ratecontent.data.local.repository.MovieRepository
 import com.example.ratecontent.data.local.entities.FavoriteItem
+import com.example.ratecontent.domain.SearchGamesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
@@ -24,14 +26,17 @@ import javax.inject.Inject
 class UnifiedViewModel @Inject constructor(
     private val searchMoviesUseCase: SearchMoviesUseCase,
     private val searchBooksUseCase: SearchBooksUseCase,
+    private val searchGamesUseCase: SearchGamesUseCase,
     private val movieRepository: MovieRepository,
     private val bookRepository: BookRepository
 ) : ViewModel() {
 
     private val _movieResults = MutableLiveData<List<Movie>>(emptyList())
     private val _bookResults = MutableLiveData<List<BookItem>>(emptyList())
+    private val _gamesResults = MutableLiveData<List<GameAPI>>(emptyList())
     val movieResults: LiveData<List<Movie>> get() = _movieResults
     val bookResults: LiveData<List<BookItem>> get() = _bookResults
+    val gamesResults: LiveData<List<GameAPI>> get() = _gamesResults
 
 
     val favoriteMovies: LiveData<List<FavoriteMovie>> = movieRepository.getFavorites().asLiveData()
@@ -45,10 +50,17 @@ class UnifiedViewModel @Inject constructor(
             val booksDeferred = async {
                 searchBooksUseCase.searchBooks(query)
             }
+            val gamesDeferred = async {
+                searchGamesUseCase.searchGames(query)
+            }
+            Log.d("GameSearch", "Search started: $query")
             val movies = moviesDeferred.await()
             val books = booksDeferred.await()
+            val games = gamesDeferred.await()
             _movieResults.postValue(movies)
             _bookResults.postValue(books)
+            _gamesResults.postValue(games)
+            Log.d("GameSearch", "Results received: ")
         }
     }
 

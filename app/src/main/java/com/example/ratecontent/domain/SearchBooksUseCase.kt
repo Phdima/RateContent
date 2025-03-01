@@ -14,7 +14,6 @@ class SearchBooksUseCase @Inject constructor(
             val response = bookApiService.searchBooks(query = query)
             response.items ?: emptyList()
         } catch (e: Exception) {
-            Log.e("SEARCH_BOOKS_UC", "Ошибка при запросе: ${e.localizedMessage}", e)
             emptyList()
         }
     }

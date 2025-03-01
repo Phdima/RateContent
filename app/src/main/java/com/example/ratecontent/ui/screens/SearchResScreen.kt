@@ -46,6 +46,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.ratecontent.LocalNavController
 import com.example.ratecontent.R
 import com.example.ratecontent.data.api.BookItem
+import com.example.ratecontent.data.api.GameAPI
 import com.example.ratecontent.data.api.Movie
 import com.example.ratecontent.data.local.entities.FavoriteBook
 import com.example.ratecontent.data.local.entities.FavoriteItem
@@ -58,6 +59,7 @@ sealed class UnifiedSearchResult {
     data class SectionHeader(val title: String) : UnifiedSearchResult()
     data class MovieItems(val movie: Movie) : UnifiedSearchResult()
     data class BookItems(val book: BookItem) : UnifiedSearchResult()
+    data class GameItems(val game: GameAPI) : UnifiedSearchResult()
 }
 
 @OptIn(ExperimentalFoundationApi::class)
@@ -68,6 +70,7 @@ fun SearchResultScreen() {
     val viewModel: UnifiedViewModel = hiltViewModel(parentEntry)
     val movieSearchResults by viewModel.movieResults.observeAsState(emptyList())
     val bookSearchResults by viewModel.bookResults.observeAsState(emptyList())
+    val gameSearchResult by viewModel.gamesResults.observeAsState(emptyList())
 
     val unifiedResults = remember(movieSearchResults, bookSearchResults) {
         buildList<UnifiedSearchResult> {
@@ -83,6 +86,12 @@ fun SearchResultScreen() {
                     .forEach {
                         add(UnifiedSearchResult.BookItems(it))
                     }
+            }
+            if (gameSearchResult.isNotEmpty()) {
+                add(UnifiedSearchResult.SectionHeader("Games"))
+                gameSearchResult.sortedByDescending { it.metacritic }.forEach {
+                    add(UnifiedSearchResult.GameItems(it))
+                }
             }
         }
     }
@@ -154,6 +163,18 @@ fun SearchResultScreen() {
                                         ), userRating = userRating
                                     )
                                 }
+                            )
+                        }
+                    }
+
+                    is UnifiedSearchResult.GameItems -> {
+                        item {
+                            SearchItemRow(
+                                title = result.game.name,
+                                overview = result.game.released.toString(),
+                                imageUrl = result.game.background_image,
+                                rating = (result.game.metacritic?.toDouble()?.div(10)) ?: 0.0,
+                                onFavoriteClick = {}
                             )
                         }
                     }
@@ -241,6 +262,7 @@ fun SearchItemRow(
         }
     }
 }
+
 @Composable
 fun RatingDialog(
     initialRating: Float = 5f,

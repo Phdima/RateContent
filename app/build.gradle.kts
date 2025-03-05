@@ -44,6 +44,7 @@ android {
 dependencies {
     testImplementation (libs.junit)
     testImplementation (libs.mockito.core)
+    testImplementation (libs.squareup.mockwebserver)
     implementation(libs.androidx.room.runtime)
     kapt(libs.androidx.room.compiler)
     implementation(libs.coil.compose)

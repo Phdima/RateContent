@@ -55,6 +55,7 @@ import coil.compose.rememberAsyncImagePainter
 import com.example.ratecontent.LocalNavController
 import com.example.ratecontent.R
 import com.example.ratecontent.data.local.entities.FavoriteBook
+import com.example.ratecontent.data.local.entities.FavoriteGame
 import com.example.ratecontent.data.local.entities.FavoriteItem
 import com.example.ratecontent.data.local.entities.FavoriteMovie
 import com.example.ratecontent.ui.viewmodel.UnifiedViewModel
@@ -139,6 +140,7 @@ fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
     val cardList = listOf("Anime", "Movies", "Games", "Books")
     val favoriteMovies by viewModel.favoriteMovies.observeAsState(emptyList())
     val favoriteBooks by viewModel.favoriteBooks.observeAsState(emptyList())
+    val favoriteGames by viewModel.favoriteGames.observeAsState(emptyList())
     var expandedItem by remember { mutableStateOf<String?>(null) }
     val sortedItems = if (expandedItem != null) {
         listOf(expandedItem!!) + cardList.filter { it != expandedItem }
@@ -146,7 +148,8 @@ fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
 
     val categoryMap: Map<String, List<Any>> = mapOf(
         "Movies" to favoriteMovies.sortedByDescending { it.voteAverage },
-        "Books" to favoriteBooks.sortedByDescending { it.averageRating }
+        "Books" to favoriteBooks.sortedByDescending { it.averageRating },
+        "Games" to favoriteGames.sortedByDescending { it.metacritic }
     )
 
     Column(
@@ -205,6 +208,12 @@ fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
                                     else ""
                                 }
 
+                                "Games" -> {
+                                    if (element is FavoriteGame)
+                                        element.background_image
+                                    else ""
+                                }
+
                                 else -> ""
                             }
                             Image(
@@ -258,6 +267,15 @@ fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
                                     onDeleteClick = { viewModel.removeFromFavorites(it) }
                                 )
                             }
+
+                            "Games" -> {
+                                val favorites =
+                                    favoriteGames.map { FavoriteItem.GameFavorite(it) }
+                                FavoritesScreen(
+                                    favoriteItems = favorites,
+                                    onDeleteClick = { viewModel.removeFromFavorites(it) }
+                                )
+                            }
                         }
                     }
                 }
@@ -283,6 +301,7 @@ fun FavoritesScreen(
                 when (sortItem) {
                     is FavoriteItem.MovieFavorite -> sortItem.movieFavorite.userRating
                     is FavoriteItem.BookFavorite -> sortItem.bookItem.userRating
+                    is FavoriteItem.GameFavorite -> sortItem.gameFavorite.userRating
                 }
             }) { item ->
                 when (item) {
@@ -296,6 +315,13 @@ fun FavoritesScreen(
                     is FavoriteItem.BookFavorite -> {
                         BookFavoriteRow(
                             book = item.bookItem,
+                            onDeleteClick = { onDeleteClick(item) }
+                        )
+                    }
+
+                    is FavoriteItem.GameFavorite -> {
+                        GameFavoriteRow(
+                            game = item.gameFavorite,
                             onDeleteClick = { onDeleteClick(item) }
                         )
                     }
@@ -407,6 +433,67 @@ fun BookFavoriteRow(book: FavoriteBook, onDeleteClick: () -> Unit) {
         Column {
             Text(
                 text = String.format("%.0f", book.userRating),
+                fontWeight = FontWeight.Bold,
+                modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxHeight(),
+                contentAlignment = Alignment.BottomEnd
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Delete,
+                    contentDescription = "Удалить",
+                    tint = Color.Red,
+                    modifier = Modifier
+                        .size(40.dp)
+                        .clickable { onDeleteClick() }
+                )
+            }
+        }
+
+    }
+}
+
+@Composable
+fun GameFavoriteRow(game: FavoriteGame, onDeleteClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(160.dp)
+            .padding(8.dp)
+            .border(1.dp, Color.Black, RoundedCornerShape(5.dp))
+            .background(colorResource(R.color.side_color))
+            .padding(8.dp)
+    ) {
+        game.background_image.let { imageUrl ->
+            Image(
+                painter = rememberAsyncImagePainter(imageUrl),
+                contentDescription = "Game Poster",
+                contentScale = ContentScale.Crop,
+                modifier = Modifier
+                    .height(140.dp)
+                    .width(100.dp)
+                    .clip(RoundedCornerShape(5.dp))
+            )
+        }
+        Spacer(modifier = Modifier.width(8.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(text = game.name ?: "Нет названия", fontWeight = FontWeight.Bold)
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(120.dp)
+                    .verticalScroll(rememberScrollState())
+            ) {
+                Text(
+                    text = game.name ?: "Нет описания",
+                )
+            }
+        }
+        Column {
+            Text(
+                text = String.format("%.0f", game.userRating),
                 fontWeight = FontWeight.Bold,
                 modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
             )

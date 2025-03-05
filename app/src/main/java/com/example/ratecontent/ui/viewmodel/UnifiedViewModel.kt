@@ -12,10 +12,12 @@ import com.example.ratecontent.data.api.BookItem
 import com.example.ratecontent.data.api.GameAPI
 import com.example.ratecontent.data.api.Movie
 import com.example.ratecontent.data.local.entities.FavoriteBook
+import com.example.ratecontent.data.local.entities.FavoriteGame
 import com.example.ratecontent.data.local.entities.FavoriteMovie
 import com.example.ratecontent.data.local.repository.BookRepository
 import com.example.ratecontent.data.local.repository.MovieRepository
 import com.example.ratecontent.data.local.entities.FavoriteItem
+import com.example.ratecontent.data.local.repository.GameRepository
 import com.example.ratecontent.domain.SearchGamesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -28,7 +30,8 @@ class UnifiedViewModel @Inject constructor(
     private val searchBooksUseCase: SearchBooksUseCase,
     private val searchGamesUseCase: SearchGamesUseCase,
     private val movieRepository: MovieRepository,
-    private val bookRepository: BookRepository
+    private val bookRepository: BookRepository,
+    private val gameRepository: GameRepository
 ) : ViewModel() {
 
     private val _movieResults = MutableLiveData<List<Movie>>(emptyList())
@@ -41,6 +44,7 @@ class UnifiedViewModel @Inject constructor(
 
     val favoriteMovies: LiveData<List<FavoriteMovie>> = movieRepository.getFavorites().asLiveData()
     val favoriteBooks: LiveData<List<FavoriteBook>> = bookRepository.getFavorites().asLiveData()
+    val favoriteGames: LiveData<List<FavoriteGame>> = gameRepository.getFavorites().asLiveData()
 
     fun search(query: String) {
         viewModelScope.launch {
@@ -90,6 +94,17 @@ class UnifiedViewModel @Inject constructor(
                     )
                     bookRepository.insertFavorite(favoriteBook)
                 }
+                is FavoriteItem.GameFavorite -> {
+                    val favoriteGame = FavoriteGame(
+                        id = item.gameFavorite.id,
+                        name = item.gameFavorite.name,
+                        background_image = item.gameFavorite.background_image,
+                        released = item.gameFavorite.released,
+                        metacritic = item.gameFavorite.metacritic,
+                        userRating = userRating
+                    )
+                    gameRepository.insertFavorite(favoriteGame)
+                }
             }
 
 
@@ -106,6 +121,11 @@ class UnifiedViewModel @Inject constructor(
             is FavoriteItem.BookFavorite -> {
                 viewModelScope.launch {
                     bookRepository.deleteFavorites(item.bookItem.id)
+                }
+            }
+            is FavoriteItem.GameFavorite -> {
+                viewModelScope.launch {
+                    gameRepository.deleteFavorite(item.gameFavorite.id)
                 }
             }
         }

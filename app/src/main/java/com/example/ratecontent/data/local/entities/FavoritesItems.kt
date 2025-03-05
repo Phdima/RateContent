@@ -7,4 +7,5 @@ import com.example.ratecontent.data.api.Movie
 sealed class FavoriteItem {
     data class MovieFavorite(val movieFavorite: FavoriteMovie) : FavoriteItem()
     data class BookFavorite(val bookItem: FavoriteBook) : FavoriteItem()
+    data class GameFavorite(val gameFavorite: FavoriteGame) : FavoriteItem()
 }

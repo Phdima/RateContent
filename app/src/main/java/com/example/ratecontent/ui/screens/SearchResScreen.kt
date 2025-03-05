@@ -49,6 +49,7 @@ import com.example.ratecontent.data.api.BookItem
 import com.example.ratecontent.data.api.GameAPI
 import com.example.ratecontent.data.api.Movie
 import com.example.ratecontent.data.local.entities.FavoriteBook
+import com.example.ratecontent.data.local.entities.FavoriteGame
 import com.example.ratecontent.data.local.entities.FavoriteItem
 import com.example.ratecontent.data.local.entities.FavoriteMovie
 import com.example.ratecontent.ui.viewmodel.UnifiedViewModel
@@ -174,7 +175,19 @@ fun SearchResultScreen() {
                                 overview = result.game.released.toString(),
                                 imageUrl = result.game.background_image,
                                 rating = (result.game.metacritic?.toDouble()?.div(10)) ?: 0.0,
-                                onFavoriteClick = {}
+                                onFavoriteClick = { userRating ->
+                                    viewModel.addToFavorites(
+                                        FavoriteItem.GameFavorite(
+                                            FavoriteGame(
+                                                id = result.game.id,
+                                                name = result.game.name,
+                                                background_image = result.game.background_image,
+                                                released = result.game.released,
+                                                metacritic = result.game.metacritic
+                                            )
+                                        ), userRating = userRating
+                                    )
+                                }
                             )
                         }
                     }
@@ -265,7 +278,7 @@ fun SearchItemRow(
 
 @Composable
 fun RatingDialog(
-    initialRating: Float = 5f,
+    initialRating: Float = 10f,
     onRatingSelected: (Double) -> Unit,
     onDismiss: () -> Unit
 ) {

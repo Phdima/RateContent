@@ -4,8 +4,10 @@ import android.content.Context
 import androidx.room.Room
 import com.example.ratecontent.data.local.db.AppDatabase
 import com.example.ratecontent.data.local.db.FavoriteBookDao
+import com.example.ratecontent.data.local.db.FavoriteGameDao
 import com.example.ratecontent.data.local.db.FavoriteMovieDao
 import com.example.ratecontent.data.local.repository.BookRepository
+import com.example.ratecontent.data.local.repository.GameRepository
 import com.example.ratecontent.data.local.repository.MovieRepository
 import dagger.Module
 import dagger.Provides
@@ -37,6 +39,11 @@ object DatabaseModule {
     }
 
     @Provides
+    fun provideFavoriteGameDao(database: AppDatabase) : FavoriteGameDao {
+        return database.favoriteGameDao()
+    }
+
+    @Provides
     @Singleton
     fun provideMovieRepository(dao: FavoriteMovieDao): MovieRepository {
         return MovieRepository(dao)
@@ -46,5 +53,11 @@ object DatabaseModule {
     @Singleton
     fun provideBookRepository(dao: FavoriteBookDao) : BookRepository {
         return BookRepository(dao)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGameRepository(dao: FavoriteGameDao) : GameRepository {
+        return GameRepository(dao)
     }
 }

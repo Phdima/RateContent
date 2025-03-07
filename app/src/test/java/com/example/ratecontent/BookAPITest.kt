@@ -1,3 +1,4 @@
+package com.example.ratecontent
 
 import com.example.ratecontent.data.api.BookApiService
 import com.squareup.moshi.Moshi

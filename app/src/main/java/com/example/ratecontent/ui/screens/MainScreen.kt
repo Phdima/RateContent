@@ -6,6 +6,7 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -137,7 +138,7 @@ fun SearchBar() {
 
 @Composable
 fun LazyCardView(viewModel: UnifiedViewModel = hiltViewModel()) {
-    val cardList = listOf("Anime", "Movies", "Games", "Books")
+    val cardList = listOf("Movies", "Games", "Books")
     val favoriteMovies by viewModel.favoriteMovies.observeAsState(emptyList())
     val favoriteBooks by viewModel.favoriteBooks.observeAsState(emptyList())
     val favoriteGames by viewModel.favoriteGames.observeAsState(emptyList())
@@ -362,7 +363,7 @@ fun MovieFavoriteRow(movie: FavoriteMovie, onDeleteClick: () -> Unit) {
                 Text(text = movie.overview)
             }
         }
-        Column {
+        Column(modifier = Modifier.width(IntrinsicSize.Min)) {
             Row {
                 Text(
                     text = String.format("%.0f", movie.userRating),
@@ -377,7 +378,8 @@ fun MovieFavoriteRow(movie: FavoriteMovie, onDeleteClick: () -> Unit) {
             }
             Box(
                 modifier = Modifier
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .align(Alignment.End),
                 contentAlignment = Alignment.BottomEnd
             ) {
                 Icon(
@@ -479,7 +481,7 @@ fun GameFavoriteRow(game: FavoriteGame, onDeleteClick: () -> Unit) {
         }
         Spacer(modifier = Modifier.width(8.dp))
         Column(modifier = Modifier.weight(1f)) {
-            Text(text = game.name ?: "Нет названия", fontWeight = FontWeight.Bold)
+            Text(text = game.name, fontWeight = FontWeight.Bold)
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
@@ -487,19 +489,28 @@ fun GameFavoriteRow(game: FavoriteGame, onDeleteClick: () -> Unit) {
                     .verticalScroll(rememberScrollState())
             ) {
                 Text(
-                    text = game.name ?: "Нет описания",
+                    text = game.released ?: "Нет описания",
+                    modifier = Modifier.padding(5.dp)
                 )
             }
         }
-        Column {
-            Text(
-                text = String.format("%.0f", game.userRating),
-                fontWeight = FontWeight.Bold,
-                modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
-            )
+        Column(modifier = Modifier.width(IntrinsicSize.Min)) {
+            Row {
+                Text(
+                    text = String.format("%.0f", game.userRating),
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
+                )
+                Text(
+                    text = "(" + game.metacritic?.toDouble()?.div(10) + ")",
+                    fontWeight = FontWeight.Bold,
+                    modifier = Modifier.padding(start = 15.dp, top = 5.dp, bottom = 5.dp)
+                )
+            }
             Box(
                 modifier = Modifier
-                    .fillMaxHeight(),
+                    .fillMaxHeight()
+                    .align(Alignment.End),
                 contentAlignment = Alignment.BottomEnd
             ) {
                 Icon(

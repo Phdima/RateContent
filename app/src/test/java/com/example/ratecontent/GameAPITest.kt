@@ -79,5 +79,19 @@ class GameAPITest {
         val request = mockWebServer.takeRequest()
         assert(request.path?.contains("123") == true)
     }
+    @Test
+    fun `searchGames handles empty response`() = runBlocking {
+        val mockResponse = MockResponse()
+            .setBody("""
+            {
+                "results": []
+            }
+        """.trimIndent())
+            .setResponseCode(200)
 
+        mockWebServer.enqueue(mockResponse)
+
+        val response = gamesAPIService.searchGames("Unknown Game")
+        assert(response.results.isEmpty())
+    }
 }
